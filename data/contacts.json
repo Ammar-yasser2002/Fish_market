@@ -1,0 +1,77 @@
+[
+  {
+    "type": "seller",
+    "createdAt": "2026-09-09",
+    "phone": "55860669",
+    "name": "خالد",
+    "id": "contact-1788985890931"
+  },
+  {
+    "id": "contact-1788986018524",
+    "name": "خالد",
+    "type": "buyer",
+    "createdAt": "2026-09-09"
+  },
+  {
+    "id": "contact-1789428149581",
+    "name": "خالد ناصر",
+    "type": "seller",
+    "createdAt": "2026-09-14"
+  },
+  {
+    "id": "contact-1789388341487",
+    "name": "سالم",
+    "type": "buyer",
+    "createdAt": "2026-09-14"
+  },
+  {
+    "id": "contact-1789428149582",
+    "name": "سالم علي",
+    "type": "buyer",
+    "createdAt": "2026-09-14"
+  },
+  {
+    "id": "contact-1789503061208",
+    "name": "صدام ناصر",
+    "type": "seller",
+    "createdAt": "2026-09-15"
+  },
+  {
+    "id": "contact-1789503061209",
+    "name": "طلال الشاخ",
+    "type": "buyer",
+    "createdAt": "2026-09-15"
+  },
+  {
+    "id": "contact-1789503160480",
+    "name": "عبد الخالق شاكر",
+    "type": "buyer",
+    "createdAt": "2026-09-15"
+  },
+  {
+    "id": "contact-1789383968640",
+    "name": "عمار ياسر",
+    "type": "buyer",
+    "createdAt": "2026-09-14"
+  },
+  {
+    "id": "contact-1789407488073",
+    "name": "معروف",
+    "type": "worker",
+    "phone": "772626899",
+    "createdAt": "2026-09-14"
+  },
+  {
+    "id": "contact-1789506073201",
+    "name": "نونس",
+    "type": "seller",
+    "createdAt": "2026-09-15"
+  },
+  {
+    "createdAt": "2026-09-09",
+    "name": "يوسف",
+    "phone": "771071799",
+    "id": "contact-1788985853929",
+    "type": "seller"
+  }
+]

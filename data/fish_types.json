@@ -1,0 +1,110 @@
+[
+  {
+    "id": "fish-1",
+    "name": "Derak (Kingfish)",
+    "arabicName": "ديرك (كنعد)",
+    "defaultUnit": "kg",
+    "unitLabel": "كيلو",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  },
+  {
+    "id": "fish-2",
+    "name": "Thamad (Yellowfin Tuna)",
+    "arabicName": "ثمد (تونة)",
+    "defaultUnit": "kg",
+    "unitLabel": "كيلو",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  },
+  {
+    "id": "fish-3",
+    "name": "Bagha (Mackerel)",
+    "arabicName": "باغة",
+    "defaultUnit": "box",
+    "unitLabel": "صندوق",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  },
+  {
+    "id": "fish-4",
+    "name": "Shaoor (Emperor)",
+    "arabicName": "شعور",
+    "defaultUnit": "kg",
+    "unitLabel": "كيلو",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  },
+  {
+    "id": "fish-5",
+    "name": "Hamoor (Grouper)",
+    "arabicName": "هامور",
+    "defaultUnit": "kg",
+    "unitLabel": "كيلو",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  },
+  {
+    "id": "fish-6",
+    "name": "Kanaan / Kaneed",
+    "arabicName": "كنعيد",
+    "defaultUnit": "kg",
+    "unitLabel": "كيلو",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  },
+  {
+    "id": "fish-7",
+    "name": "Salmani",
+    "arabicName": "سلماني",
+    "defaultUnit": "kg",
+    "unitLabel": "كيلو",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  },
+  {
+    "id": "fish-8",
+    "name": "Anflos (Trevally)",
+    "arabicName": "عنفلوص",
+    "defaultUnit": "kg",
+    "unitLabel": "كيلو",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  },
+  {
+    "id": "fish-9",
+    "name": "Bagher",
+    "arabicName": "باغر",
+    "defaultUnit": "box",
+    "unitLabel": "صندوق",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  },
+  {
+    "id": "fish-10",
+    "name": "Najil (Coral Trout)",
+    "arabicName": "ناجل أحمر",
+    "defaultUnit": "kg",
+    "unitLabel": "كيلو",
+    "estimatedPricePerUnit": 0,
+    "popular": false
+  },
+  {
+    "id": "fish-11",
+    "name": "Harid (Parrotfish)",
+    "arabicName": "حريد",
+    "defaultUnit": "kg",
+    "unitLabel": "كيلو",
+    "estimatedPricePerUnit": 0,
+    "popular": false
+  },
+  {
+    "id": "fish-12",
+    "name": "Shrimp (Auction Box)",
+    "arabicName": "ربيان حراج",
+    "defaultUnit": "box",
+    "unitLabel": "صندوق",
+    "estimatedPricePerUnit": 0,
+    "popular": true
+  }
+]

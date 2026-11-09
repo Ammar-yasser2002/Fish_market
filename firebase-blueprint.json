@@ -1,0 +1,140 @@
+{
+  "entities": {
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A single fish auction transaction recording sale amount, buyer fees (+2%), seller deductions (-3%), and association profit (5%)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique transaction receipt identifier" },
+        "timestamp": { "type": "number", "description": "Unix timestamp in milliseconds" },
+        "dateStr": { "type": "string", "description": "Human readable date in Arabic" },
+        "timeStr": { "type": "string", "description": "Human readable time" },
+        "buyerName": { "type": "string", "description": "Buyer or trader full name" },
+        "buyerPhone": { "type": "string", "description": "Buyer contact phone number" },
+        "sellerName": { "type": "string", "description": "Seller or fisherman full name" },
+        "sellerBoat": { "type": "string", "description": "Boat or vessel name/number" },
+        "sellerPhone": { "type": "string", "description": "Seller contact phone number" },
+        "grossAmount": { "type": "number", "description": "Base total transaction amount" },
+        "buyerTaxRate": { "type": "number", "description": "Buyer commission percentage rate, e.g. 0.02" },
+        "buyerTaxAmount": { "type": "number", "description": "Buyer commission fee added" },
+        "totalFromBuyer": { "type": "number", "description": "Total amount payable by buyer" },
+        "sellerTaxRate": { "type": "number", "description": "Seller deduction percentage rate, e.g. 0.03" },
+        "sellerTaxAmount": { "type": "number", "description": "Seller deduction fee subtracted" },
+        "netToSeller": { "type": "number", "description": "Net amount payable to seller" },
+        "harajProfit": { "type": "number", "description": "Market association revenue (5%)" },
+        "status": { "type": "string", "description": "Transaction status (completed/pending/cancelled)" },
+        "notes": { "type": "string", "description": "Optional notes on transaction" },
+        "items": { "type": "array", "description": "List of fish items and quantities sold" }
+      },
+      "required": ["id", "timestamp", "grossAmount", "totalFromBuyer", "netToSeller", "harajProfit"]
+    },
+    "Contact": {
+      "title": "Contact",
+      "description": "Fishermen, boats, and trader directory entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique contact ID" },
+        "name": { "type": "string", "description": "Full name" },
+        "type": { "type": "string", "description": "Contact category: seller, buyer, or both" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "boatName": { "type": "string", "description": "Vessel/boat name if applicable" },
+        "notes": { "type": "string", "description": "Operational notes" },
+        "createdAt": { "type": "string", "description": "Creation date" }
+      },
+      "required": ["id", "name", "type"]
+    },
+    "FishType": {
+      "title": "FishType",
+      "description": "Fish catalog entry with unit and default pricing",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique fish type ID" },
+        "name": { "type": "string", "description": "Identifier name" },
+        "arabicName": { "type": "string", "description": "Arabic fish name" },
+        "defaultUnit": { "type": "string", "description": "Measurement unit key" },
+        "unitLabel": { "type": "string", "description": "Measurement unit display label" },
+        "estimatedPricePerUnit": { "type": "number", "description": "Estimated price per unit" },
+        "popular": { "type": "boolean", "description": "Whether item appears in quick POS panel" }
+      },
+      "required": ["id", "name", "arabicName", "defaultUnit"]
+    },
+    "MarketSettings": {
+      "title": "MarketSettings",
+      "description": "Global market system settings and commission rates",
+      "type": "object",
+      "properties": {
+        "marketName": { "type": "string", "description": "Central market or association name" },
+        "subTitle": { "type": "string", "description": "Subtitle on printed receipts" },
+        "location": { "type": "string", "description": "Geographical harbor location" },
+        "currency": { "type": "string", "description": "Market currency symbol (e.g. ر.س)" },
+        "buyerTaxRate": { "type": "number", "description": "Buyer tax rate e.g. 0.02" },
+        "sellerTaxRate": { "type": "number", "description": "Seller tax rate e.g. 0.03" }
+      },
+      "required": ["marketName", "buyerTaxRate", "sellerTaxRate"]
+    },
+    "CashEntry": {
+      "title": "CashEntry",
+      "description": "Cash drawer movement entry (opening float, expense, deposit, withdrawal)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique cash movement ID" },
+        "timestamp": { "type": "number", "description": "Timestamp in milliseconds" },
+        "dateStr": { "type": "string", "description": "Date string" },
+        "timeStr": { "type": "string", "description": "Time string" },
+        "type": { "type": "string", "description": "Movement type: opening, expense, deposit, withdrawal" },
+        "category": { "type": "string", "description": "Expense or deposit category" },
+        "amount": { "type": "number", "description": "Movement monetary amount" },
+        "description": { "type": "string", "description": "Movement notes or description" },
+        "performedBy": { "type": "string", "description": "Cashier or user name" }
+      },
+      "required": ["id", "timestamp", "type", "amount"]
+    },
+    "CashDayCloseRecord": {
+      "title": "CashDayCloseRecord",
+      "description": "End-of-day cash drawer reconciliation and closing audit report",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique day close voucher ID" },
+        "timestamp": { "type": "number", "description": "Timestamp in milliseconds" },
+        "dateStr": { "type": "string", "description": "Date string" },
+        "timeStr": { "type": "string", "description": "Time string" },
+        "openingBalance": { "type": "number", "description": "Opening float" },
+        "totalDeposits": { "type": "number", "description": "Sum of deposits" },
+        "totalExpenses": { "type": "number", "description": "Sum of expenses" },
+        "totalWithdrawals": { "type": "number", "description": "Sum of withdrawals" },
+        "harajCashSales": { "type": "number", "description": "Cash collected from fish sales" },
+        "systemCalculatedBalance": { "type": "number", "description": "Expected drawer cash" },
+        "actualCountedCash": { "type": "number", "description": "Physically counted drawer cash" },
+        "difference": { "type": "number", "description": "Variance (shortage or surplus)" },
+        "notes": { "type": "string", "description": "Closing audit notes" }
+      },
+      "required": ["id", "timestamp", "systemCalculatedBalance", "actualCountedCash", "difference"]
+    }
+  },
+  "firestore": {
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Collection of all fish market transactions and receipts"
+    },
+    "/contacts/{contactId}": {
+      "schema": "Contact",
+      "description": "Directory of fishermen, boat captains, and fish traders"
+    },
+    "/fishTypes/{fishTypeId}": {
+      "schema": "FishType",
+      "description": "Catalog of fish species, units, and base prices"
+    },
+    "/settings/{settingId}": {
+      "schema": "MarketSettings",
+      "description": "Application settings and commission configuration"
+    },
+    "/cashEntries/{cashEntryId}": {
+      "schema": "CashEntry",
+      "description": "Collection of cash register drawer movements and expenses"
+    },
+    "/cashClosings/{closingId}": {
+      "schema": "CashDayCloseRecord",
+      "description": "Collection of daily register closing audits and vouchers"
+    }
+  }
+}

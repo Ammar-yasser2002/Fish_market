@@ -1,0 +1,17 @@
+node_modules/
+build/
+dist/
+release/
+.kilo/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+*.db-shm
+*.db-wal
+*.db
+*.db.bak*
+*.bak*
+*.exe
+*.lnk

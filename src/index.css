@@ -1,0 +1,355 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    border-color: var(--color-slate-200);
+  }
+  body {
+    background-color: #f4f7fb;
+    color: #0f172a;
+    font-family: var(--app-font-family, 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  }
+}
+
+/* Print Styles for 80mm Thermal Receipt Printers and standard printing */
+@media print {
+  /* Hide scrollbars during print completely */
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  * {
+    scrollbar-width: none !important;
+  }
+
+  /* Disable hardware compositing layers (transforms, filters, blurs) during print to prevent Chromium 96 DPI rasterization */
+  *, *::before, *::after {
+    transform: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    transition: none !important;
+    animation: none !important;
+    text-rendering: optimizeLegibility !important;
+    -webkit-font-smoothing: antialiased !important;
+  }
+
+  @page {
+    margin: 4mm 5mm;
+  }
+
+  html {
+    font-size: 13px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12px !important;
+    font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* When an invoice or statement modal is open, completely isolate it and hide the background app */
+  body:has(> #receipt-modal-root) #root,
+  body:has(#receipt-modal-root) #main-app-shell,
+  body:has(#receipt-modal-root) > div > .no-print,
+  body:has(> #buyer-statement-modal) #root,
+  body:has(#buyer-statement-modal) #main-app-shell,
+  body:has(> #fisherman-settlement-modal) #root,
+  body:has(#fisherman-settlement-modal) #main-app-shell,
+  body:has(> #fisherman-disbursements-modal) #root,
+  body:has(#fisherman-disbursements-modal) #main-app-shell,
+  body:has(> #all-debtors-modal) #root,
+  body:has(#all-debtors-modal) #main-app-shell,
+  body:has(> #single-repayment-modal) #root,
+  body:has(#single-repayment-modal) #main-app-shell,
+  body:has(> #daily-drilldown-print-modal) #root,
+  body:has(#daily-drilldown-print-modal) #main-app-shell,
+  body:has(> #daily-inventory-print-modal) #root,
+  body:has(#daily-inventory-print-modal) #main-app-shell,
+  body:has(> #monthly-inventory-print-modal) #root,
+  body:has(#monthly-inventory-print-modal) #main-app-shell {
+    display: none !important;
+  }
+
+  #receipt-modal-root,
+  #buyer-statement-modal,
+  #fisherman-settlement-modal,
+  #fisherman-disbursements-modal,
+  #all-debtors-modal,
+  #single-repayment-modal,
+  #daily-drilldown-print-modal,
+  #daily-inventory-print-modal,
+  #monthly-inventory-print-modal {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Hide screen-only interactive elements */
+  .no-print,
+  nav,
+  header,
+  aside,
+  button,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Display print container */
+  .printable-receipt-area {
+    display: block !important;
+    width: 78mm !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 2mm 3mm !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .printable-statement-area {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 auto !important;
+    padding: 0 8px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    box-sizing: border-box !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .printable-statement-area * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .printable-statement-area table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    box-sizing: border-box !important;
+  }
+
+  .printable-statement-area th,
+  .printable-statement-area td {
+    border: 1px solid #cbd5e1 !important;
+    box-sizing: border-box !important;
+  }
+
+  .printable-statement-area thead th {
+    color: #ffffff !important;
+  }
+
+  /* Service Invoice Print Layout (فاتورة خدمية - Exact Black Borders & 100% Fit) */
+  .printable-service-invoice-area {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .printable-service-invoice-area * {
+    box-sizing: border-box !important;
+  }
+
+  .printable-service-invoice-area table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    box-sizing: border-box !important;
+  }
+
+  .printable-service-invoice-area th,
+  .printable-service-invoice-area td {
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Daily & Monthly Inventory and Drilldown Print Layout - Crisp Pure Black & 100% Width */
+  .printable-inventory-area {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  .printable-inventory-area *,
+  #daily-drilldown-print-modal *,
+  #daily-inventory-print-modal *,
+  #monthly-inventory-print-modal * {
+    color: #000000 !important;
+    text-shadow: none !important;
+  }
+
+  .printable-inventory-area table,
+  #daily-drilldown-print-modal table,
+  #daily-inventory-print-modal table,
+  #monthly-inventory-print-modal table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .printable-inventory-area th,
+  .printable-inventory-area td,
+  #daily-drilldown-print-modal th,
+  #daily-drilldown-print-modal td,
+  #daily-inventory-print-modal th,
+  #daily-inventory-print-modal td,
+  #monthly-inventory-print-modal th,
+  #monthly-inventory-print-modal td {
+    border: 1px solid #334155 !important;
+    color: #000000 !important;
+  }
+
+  .print-page-break {
+    page-break-after: always;
+  }
+}
+
+/* RTL Layout & Global scrollbar on left side */
+html {
+  direction: rtl;
+  font-size: 17.92px; /* 112% base scale */
+}
+
+body {
+  direction: rtl;
+}
+
+/* Custom scrollbar: Prominent, high-contrast, easy to see and grab on the left side in RTL */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #030164;
+  border-radius: 6px;
+  border: 2px solid #e2e8f0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1e3a8a;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #2563eb;
+}
+
+/* Firefox scrollbar support */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: #030164 #e2e8f0;
+}
+
+/* Hide scrollbar utility for sleek panels like sidebar */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Horizontal developer credit on invoices and statements in faint muted tone */
+.invoice-margin-credit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  text-align: center;
+  direction: rtl;
+  font-family: 'Cairo', system-ui, sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  opacity: 0.65;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  z-index: 50;
+}
+
+@media print {
+  .invoice-margin-credit {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 4px !important;
+    top: auto !important;
+    text-align: center !important;
+    direction: rtl !important;
+    writing-mode: horizontal-tb !important;
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    color: #94a3b8 !important;
+    opacity: 0.65 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    display: block !important;
+  }
+}
+
+

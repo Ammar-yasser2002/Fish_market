@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['id', 'timestamp', 'grossAmount', 'totalFromBuyer', 'netToSeller', 'harajProfit'])
+        && data.id is string
+        && data.id.size() > 0
+        && data.id.size() <= 100
+        && data.timestamp is number
+        && data.grossAmount is number
+        && data.grossAmount >= 0
+        && data.totalFromBuyer is number
+        && data.totalFromBuyer >= 0
+        && data.netToSeller is number
+        && data.netToSeller >= 0
+        && data.harajProfit is number
+        && data.harajProfit >= 0;
+    }
+
+    function isValidContact(data) {
+      return data.keys().hasAll(['id', 'name', 'type'])
+        && data.id is string
+        && data.id.size() > 0
+        && data.id.size() <= 100
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 200
+        && data.type is string
+        && (data.type == 'seller' || data.type == 'buyer' || data.type == 'both');
+    }
+
+    function isValidFishType(data) {
+      return data.keys().hasAll(['id', 'name', 'arabicName', 'defaultUnit'])
+        && data.id is string
+        && data.id.size() > 0
+        && data.id.size() <= 100
+        && data.arabicName is string
+        && data.arabicName.size() > 0
+        && data.arabicName.size() <= 100;
+    }
+
+    function isValidSettings(data) {
+      return data.keys().hasAll(['marketName', 'buyerTaxRate', 'sellerTaxRate'])
+        && data.marketName is string
+        && data.marketName.size() > 0
+        && data.marketName.size() <= 200
+        && data.buyerTaxRate is number
+        && data.buyerTaxRate >= 0
+        && data.sellerTaxRate is number
+        && data.sellerTaxRate >= 0;
+    }
+
+    function isValidCashEntry(data) {
+      return data.keys().hasAll(['id', 'timestamp', 'type', 'amount'])
+        && data.id is string
+        && data.id.size() > 0
+        && data.id.size() <= 100
+        && data.timestamp is number
+        && data.type is string
+        && (data.type == 'opening' || data.type == 'expense' || data.type == 'deposit' || data.type == 'withdrawal' || data.type == 'seller_payout' || data.type == 'buyer_debt_repayment')
+        && data.amount is number
+        && data.amount >= 0;
+    }
+
+    function isValidCashClosing(data) {
+      return data.keys().hasAll(['id', 'timestamp', 'systemCalculatedBalance', 'actualCountedCash', 'difference'])
+        && data.id is string
+        && data.id.size() > 0
+        && data.id.size() <= 100
+        && data.timestamp is number
+        && data.systemCalculatedBalance is number
+        && data.actualCountedCash is number
+        && data.difference is number;
+    }
+
+    // Transactions Collection
+    match /transactions/{transactionId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Contacts Collection
+    match /contacts/{contactId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Fish Types Collection
+    match /fishTypes/{fishTypeId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Settings Collection
+    match /settings/{settingId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Cash Entries Collection (حركات الصندوق)
+    match /cashEntries/{cashEntryId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Cash Closings Collection (محاضر إقفال اليومية)
+    match /cashClosings/{closingId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

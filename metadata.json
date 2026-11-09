@@ -1,0 +1,6 @@
+{
+  "name": "نظام حراج الأسماك - نقطة البيع والحسابات",
+  "description": "نظام نقطة بيع وتسجيل سريع لعمليات حراج الأسماك مع حساب عمولة المشتري 2% وخصم البائع 3% وأرباح الجمعية وطباعة الفواتير الحرارية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

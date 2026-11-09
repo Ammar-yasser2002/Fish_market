@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id                       String            @id
+  dateStr                  String?           @map("date_str")
+  timeStr                  String?           @map("time_str")
+  timestamp                BigInt
+  sellerId                 String?           @map("seller_id")
+  sellerName               String            @map("seller_name")
+  sellerPhone              String?           @map("seller_phone")
+  buyerId                  String?           @map("buyer_id")
+  buyerName                String            @map("buyer_name")
+  buyerPhone               String?           @map("buyer_phone")
+  grossAmount              Float             @map("gross_amount")
+  buyerTaxRate             Float?            @map("buyer_tax_rate")
+  buyerTaxAmount           Float             @map("buyer_tax_amount")
+  totalFromBuyer           Float             @map("total_from_buyer")
+  sellerTaxRate            Float?            @map("seller_tax_rate")
+  sellerTaxAmount          Float             @map("seller_tax_amount")
+  netToSeller              Float             @map("net_to_seller")
+  harajProfit              Float             @map("haraj_profit")
+  paymentStatus            String            @map("payment_status")
+  settlementType           String?           @map("settlement_type")
+  buyerPaidAmount          Float?            @map("buyer_paid_amount")
+  paidAtPosBuyerAmount     Float?            @map("paid_at_pos_buyer_amount")
+  buyerRemainingDebt       Float?            @map("buyer_remaining_debt")
+  buyerAdvanceUsed         Float?            @map("buyer_advance_used")
+  sellerPaidAmount         Float?            @map("seller_paid_amount")
+  paidAtPosAmount          Float?            @map("paid_at_pos_amount")
+  sellerRemainingDebt      Float?            @map("seller_remaining_debt")
+  sellerPaidStatus         String?           @map("seller_paid_status")
+  sellerPayoutMethod       String?           @map("seller_payout_method")
+  sellerExchangeName       String?           @map("seller_exchange_name")
+  isEdited                 Boolean?          @default(false) @map("is_edited")
+  editedAt                 BigInt?           @map("edited_at")
+  editedDateStr            String?           @map("edited_date_str")
+  isTransferred            Boolean?          @default(false) @map("is_transferred")
+  transferredFromBuyerName  String?           @map("transferred_from_buyer_name")
+  transferredAt            BigInt?           @map("transferred_at")
+  isResale                 Boolean?          @default(false) @map("is_resale")
+  resaleSurplus            Float?            @map("resale_surplus")
+  resoldFromTransactionId  String?           @map("resold_from_transaction_id")
+  wasResold                Boolean?          @default(false) @map("was_resold")
+  resoldToTransactionId    String?           @map("resold_to_transaction_id")
+  resoldToBuyerName        String?           @map("resold_to_buyer_name")
+  resoldPaymentStatus      String?           @map("resold_payment_status")
+  notes                    String?
+  items                    TransactionItem[]
+  data                     Json?
+  createdAt                DateTime          @default(now()) @map("created_at")
+  updatedAt                DateTime          @updatedAt @map("updated_at")
+
+  @@index([timestamp(sort: Desc)])
+  @@index([dateStr])
+  @@index([buyerName])
+  @@index([sellerName])
+  @@map("transactions")
+}
+
+model TransactionItem {
+  id            String      @id @default(uuid())
+  transactionId String      @map("transaction_id")
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  fishTypeId    String?     @map("fish_type_id")
+  fishName      String      @map("fish_name")
+  quantity      Float
+  unit          String
+  unitPrice     Float       @map("unit_price")
+  totalGross    Float       @map("total_gross")
+
+  @@index([transactionId])
+  @@map("transaction_items")
+}
+
+model Contact {
+  id        String   @id
+  name      String
+  type      String
+  phone     String?
+  taxNumber String?  @map("tax_number")
+  role      String?
+  dailyWage Float?   @map("daily_wage")
+  notes     String?
+  createdAt String?  @map("created_at")
+  data      Json?
+
+  @@index([name])
+  @@index([type])
+  @@map("contacts")
+}
+
+model FishType {
+  id                    String   @id
+  name                  String
+  arabicName            String?  @map("arabic_name")
+  defaultUnit           String   @map("default_unit")
+  unitLabel             String   @map("unit_label")
+  estimatedPricePerUnit Float?   @map("estimated_price_per_unit")
+  category              String?
+  popular               Boolean  @default(true)
+  data                  Json?
+
+  @@index([name])
+  @@map("fish_types")
+}
+
+model CashEntry {
+  id              String   @id
+  timestamp       BigInt
+  dateStr         String   @map("date_str")
+  timeStr         String   @map("time_str")
+  type            String
+  category        String
+  amount          Float
+  description     String?
+  performedBy     String?  @map("performed_by")
+  referenceId     String?  @map("reference_id")
+  contactId       String?  @map("contact_id")
+  contactName     String?  @map("contact_name")
+  transactionId   String?  @map("transaction_id")
+  payoutMethod    String?  @map("payout_method")
+  repaymentMethod String?  @map("repayment_method")
+  exchangeName    String?  @map("exchange_name")
+  data            Json?
+
+  @@index([timestamp(sort: Desc)])
+  @@map("cash_entries")
+}
+
+model CashDayCloseRecord {
+  id                          String   @id
+  timestamp                   BigInt
+  dateStr                     String   @map("date_str")
+  timeStr                     String   @map("time_str")
+  openingBalance              Float    @map("opening_balance")
+  totalDeposits               Float    @map("total_deposits")
+  totalExpenses               Float    @map("total_expenses")
+  totalWithdrawals            Float    @map("total_withdrawals")
+  harajCashSales              Float?   @map("haraj_cash_sales")
+  harajSellerPayouts          Float?   @map("haraj_seller_payouts")
+  buyerDebtRepayments         Float?   @map("buyer_debt_repayments")
+  buyerDebtExchangeRepayments Float?   @map("buyer_debt_exchange_repayments")
+  sellerExchangePayouts       Float?   @map("seller_exchange_payouts")
+  officeExpenses              Float?   @map("office_expenses")
+  associationProfits          Float?   @map("association_profits")
+  systemCalculatedBalance     Float    @map("system_calculated_balance")
+  actualCountedCash           Float    @map("actual_counted_cash")
+  difference                  Float
+  notes                       String?
+  data                        Json?
+
+  @@index([timestamp(sort: Desc)])
+  @@map("cash_closings")
+}
+
+model Setting {
+  key  String @id
+  data Json
+
+  @@map("settings")
+}

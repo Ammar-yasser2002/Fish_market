@@ -1,0 +1,46 @@
+[
+  {
+    "id": "CASH-108908",
+    "type": "opening",
+    "amount": 1000000,
+    "dateStr": "2026-10-23",
+    "timeStr": "10:18 م",
+    "category": "عهدة صباحية",
+    "timestamp": 1792783108908,
+    "description": "حركة opening",
+    "performedBy": "أمين الصندوق"
+  },
+  {
+    "id": "CASH-884859",
+    "type": "buyer_debt_repayment",
+    "amount": 102000,
+    "dateStr": "2026-10-24",
+    "timeStr": "12:11 ص",
+    "category": "سداد دين مشتري",
+    "contactId": "contact-1792783184303",
+    "timestamp": 1792789884859,
+    "contactName": "ابراهيم الشبار",
+    "description": "سداد دين المشتري: ابراهيم الشبار (سداد فاتورة/شروة #TRX-2610-0004)",
+    "performedBy": "أمين الصندوق",
+    "referenceId": "TRX-2610-0004",
+    "payoutMethod": "cash",
+    "transactionId": "TRX-2610-0004",
+    "repaymentMethod": "cash"
+  },
+  {
+    "id": "PAY-339314",
+    "type": "seller_payout",
+    "amount": 97000,
+    "dateStr": "2026/10/23",
+    "timeStr": "10:21 م",
+    "category": "تسليم مستحقات صياد",
+    "contactId": "contact-1792783262563",
+    "timestamp": 1792783339314,
+    "contactName": "خالد عوض احمد الشبار",
+    "description": "تسليم مستحقات الصياد نقداً: خالد الشبار - تسليم وصرف مستحقات الفاتورة #TRX-2610-0001",
+    "performedBy": "أمين الصندوق",
+    "referenceId": "TRX-2610-0001",
+    "payoutMethod": "cash",
+    "transactionId": "TRX-2610-0001"
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "openingBalance": 3000000,
+    "totalDeposits": 0,
+    "totalExpenses": 0,
+    "totalWithdrawals": 0,
+    "harajCashSales": 0,
+    "systemCalculatedBalance": 3050000,
+    "actualCountedCash": 3050000,
+    "difference": 0,
+    "notes": "تم إقفال اليومية ومطابقة النقدية",
+    "id": "CLOSE-368630",
+    "timestamp": 1789383368630,
+    "dateStr": "2026-09-14",
+    "timeStr": "٠١:٥٦ م"
+  },
+  {
+    "openingBalance": 1000000,
+    "totalDeposits": 1000000,
+    "totalExpenses": 5000,
+    "totalWithdrawals": 10000,
+    "harajCashSales": 0,
+    "systemCalculatedBalance": 1600000,
+    "actualCountedCash": 1600000,
+    "difference": 0,
+    "notes": "تم إقفال اليومية ومطابقة النقدية",
+    "id": "CLOSE-471569",
+    "timestamp": 1789410471569,
+    "dateStr": "2026-09-14",
+    "timeStr": "٠٩:٢٧ م"
+  },
+  {
+    "openingBalance": 3000000,
+    "totalDeposits": 0,
+    "totalExpenses": 50000,
+    "totalWithdrawals": 0,
+    "harajCashSales": 0,
+    "systemCalculatedBalance": 2130000,
+    "actualCountedCash": 2130000,
+    "difference": 0,
+    "notes": "تم إقفال اليومية ومطابقة النقدية",
+    "id": "CLOSE-091067",
+    "timestamp": 1789559091067,
+    "dateStr": "2026-09-16",
+    "timeStr": "٠٢:٤٤ م"
+  },
+  {
+    "openingBalance": 3000000,
+    "totalDeposits": 0,
+    "totalExpenses": 72000,
+    "totalWithdrawals": 0,
+    "harajCashSales": 0,
+    "systemCalculatedBalance": 2098300,
+    "actualCountedCash": 2098300,
+    "difference": 0,
+    "notes": "تم إقفال اليومية ومطابقة النقدية",
+    "id": "CLOSE-508620",
+    "timestamp": 1789562508620,
+    "dateStr": "2026-09-16",
+    "timeStr": "٠٣:٤١ م"
+  }
+]

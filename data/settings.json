@@ -1,0 +1,11 @@
+{
+  "marketName": "سوق عين بامعبد المركزي",
+  "subTitle": "للأسماك الطازجة والخضروات والفواكه",
+  "buyerTaxRate": 0.02,
+  "sellerTaxRate": 0.03,
+  "currency": "ريال يمني",
+  "contactPhone": "782191112",
+  "location": "م/شبوه/رضوم/ عين بامعبد",
+  "paperWidth": "80mm",
+  "autoOpenPrint": true
+}
