@@ -461,6 +461,7 @@ export function executeRepayBuyerDebt(
   const normTargetId = (buyerId || '').trim().toLowerCase();
   const normTargetName = (buyerName || '').trim().toLowerCase();
   const hasSpecificTarget = Boolean(targetTransactionId && targetTransactionId !== 'ALL');
+  const isTargetAll = targetTransactionId === 'ALL';
 
   let remainingToRepay = amount;
   const affectedTransactions: { id: string; advanceUsed?: number; debtPaid: number; remainingAfter: number }[] = [];
@@ -503,12 +504,10 @@ export function executeRepayBuyerDebt(
         });
       }
     }
-  }
-
-  // 2. إذا تبقى أي مبلغ (أو لم تحدد فاتورة معينة)، يوزع تلقائياً على فواتير المشتري غير المسددة من الأقدم للأحدث (FIFO)
-  if (remainingToRepay > 0) {
+  } else if (isTargetAll) {
+    // 2. إذا تم اختيار صريح لسداد كافة الشروات المعلقة (تحديد الكل)
     const otherUnpaid = currentTransactions
-      .filter((t) => isBuyerMatch(t) && (!hasSpecificTarget || t.id !== targetTransactionId))
+      .filter((t) => isBuyerMatch(t))
       .sort((a, b) => {
         const aTs = Number(a.timestamp) || (a.dateStr ? new Date(a.dateStr.replace(/\//g, '-')).getTime() : 0);
         const bTs = Number(b.timestamp) || (b.dateStr ? new Date(b.dateStr.replace(/\//g, '-')).getTime() : 0);
@@ -542,6 +541,8 @@ export function executeRepayBuyerDebt(
       }
     }
   }
+  // 3. في حال لم يتم تحديد أي فاتورة (سداد عام من إجمالي الدين):
+  // لا نقوم بتعديل أي فاتورة إطلاقاً ولا نظهر أي فاتورة بحالة "تسديد جزئي"، بل تبقى الفواتير بأصلها ويُقيد السند كدفعة عامة على الحساب.
 
   const modifiedTransactions: Transaction[] = [];
   let updatedTrxs = currentTransactions.map((t) => {
@@ -616,6 +617,10 @@ export function executeRepayBuyerDebt(
 
   if (hasSpecificTarget) {
     autoDesc += ` (سداد فاتورة/شروة #${targetTransactionId})`;
+  } else if (isTargetAll) {
+    autoDesc += ` (سداد كافة الشروات المعلقة)`;
+  } else {
+    autoDesc += ` (دفعة على الحساب من إجمالي الدين)`;
   }
 
   const advanceBreakdown = affectedTransactions

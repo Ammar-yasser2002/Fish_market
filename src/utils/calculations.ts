@@ -1115,6 +1115,43 @@ export function getTransactionBuyerDebt(t: Transaction): number {
 }
 
 /**
+ * حساب إجمالي صافي دين المشتري بدقة عبر خصم سندات السداد العامة غير المربوطة بفواتير محددة
+ */
+export function calculateBuyerTotalDebt(
+  transactions: Transaction[],
+  cashEntries: CashEntry[],
+  buyerId?: string,
+  buyerName?: string
+): number {
+  if (!buyerId && !buyerName) return 0;
+  const normId = (buyerId || '').trim().toLowerCase();
+  const normName = (buyerName || '').trim().toLowerCase();
+
+  const isMatch = (cId?: string, cName?: string) => {
+    const id = (cId || '').trim().toLowerCase();
+    const name = (cName || '').trim().toLowerCase();
+    return (
+      (normId && (id === normId || name === normId)) ||
+      (normName && (id === normName || name === normName))
+    );
+  };
+
+  const totalInvoiceDebt = (transactions || [])
+    .filter((t) => isMatch(t.buyerId, t.buyerName))
+    .reduce((sum, t) => sum + Math.max(0, getTransactionBuyerDebt(t)), 0);
+
+  const unlinkedRepayments = (cashEntries || [])
+    .filter((c) => {
+      if (c.type !== 'buyer_debt_repayment' && c.type !== 'buyer_advance_repayment') return false;
+      if (!isMatch(c.contactId, c.contactName)) return false;
+      return !c.transactionId && !c.referenceId;
+    })
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+  return Math.max(0, totalInvoiceDebt - unlinkedRepayments);
+}
+
+/**
  * Repairs stale buyer debt fields in memory and marks transactions that need persistence.
  */
 export function normalizeBuyerDebtFields(trxs: Transaction[]): {

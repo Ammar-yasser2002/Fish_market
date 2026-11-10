@@ -24,6 +24,7 @@ import {
   isSameCalendarDay,
   parseLocalDate,
   getTransactionBuyerDebt,
+  calculateBuyerTotalDebt,
 } from '../utils/calculations';
 import { FishermanSettlementModal } from './FishermanSettlementModal';
 import { BuyerStatementModal } from './BuyerStatementModal';
@@ -1678,13 +1679,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   // Outstanding Debt for the selected buyer across all their transactions
   const selectedBuyerDebt = useMemo(() => {
     if (!selectedBuyer) return 0;
-    return transactions
-      .filter((t) => isExactContactMatch(t.buyerId, t.buyerName, selectedBuyer.id, selectedBuyer.name))
-      .reduce((sum, t) => {
-        const debt = getTransactionBuyerDebt(t);
-        return sum + Math.max(0, debt);
-      }, 0);
-  }, [transactions, selectedBuyer]);
+    return calculateBuyerTotalDebt(transactions, cashEntries, selectedBuyer.id, selectedBuyer.name);
+  }, [transactions, cashEntries, selectedBuyer]);
 
   // Advance wallet balance & statistics for selected buyer
   const selectedBuyerAdvanceStats = useMemo(() => {

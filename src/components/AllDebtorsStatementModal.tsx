@@ -243,6 +243,21 @@ export const AllDebtorsStatementModal: React.FC<AllDebtorsStatementModalProps> =
       // Accurate comprehensive total paid for this buyer
       record.totalPaid = Math.max(trxPaidTotal, cashRepaidTotal);
 
+      // خصم سندات السداد العامة على الحساب (دفعة من إجمالي الدين) غير المربوطة بفواتير محددة
+      const unlinkedRepayments = (cashEntries || [])
+        .filter((c) => {
+          if (c.type !== 'buyer_debt_repayment' && c.type !== 'buyer_advance_in') return false;
+          if (scope === 'today' && !isSameCalendarDay(c.dateStr || (c as any).timestamp, new Date())) return false;
+          const isMatch =
+            (c.contactId && c.contactId === record.buyerId) ||
+            (c.contactName && c.contactName.trim() === record.buyerName.trim());
+          if (!isMatch) return false;
+          return !c.transactionId && !c.referenceId;
+        })
+        .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+      record.remainingDebt = Math.max(0, record.remainingDebt - unlinkedRepayments);
+
       // Payments made today specifically
       const todayBuyerTransactions = allBuyerTransactions.filter((t) =>
         isSameCalendarDay(t.dateStr || t.timestamp, new Date())
@@ -294,8 +309,10 @@ export const AllDebtorsStatementModal: React.FC<AllDebtorsStatementModalProps> =
       record.dailyBreakdown = Array.from(dailyMap.values()).sort((a, b) => a.dayKey.localeCompare(b.dayKey));
     });
 
-    // Sort by largest debt first
-    return result.sort((a, b) => b.remainingDebt - a.remainingDebt);
+    // Sort by largest debt first (فقط من لديهم متبقي دين فعلي أكبر من الصفر)
+    return result
+      .filter((b) => b.remainingDebt > 0)
+      .sort((a, b) => b.remainingDebt - a.remainingDebt);
   }, [transactions, contacts, cashEntries, scope]);
 
   // Selected single debtor for individual claim preview (Image 2 design)

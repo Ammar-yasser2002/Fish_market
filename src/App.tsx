@@ -1776,6 +1776,7 @@ function AppInner() {
     const normTargetId = (buyerId || '').trim().toLowerCase();
     const normTargetName = (buyerName || '').trim().toLowerCase();
     const hasSpecificTarget = Boolean(targetTransactionId && targetTransactionId !== 'ALL');
+    const isTargetAll = targetTransactionId === 'ALL';
 
     let remainingToRepay = amount;
     const affectedTransactions: { id: string; advanceUsed?: number; debtPaid: number; remainingAfter: number }[] = [];
@@ -1822,12 +1823,10 @@ function AppInner() {
           });
         }
       }
-    }
-
-    // 2. توزيع المتبقي على باقي الفواتير غير المسددة من الأقدم إلى الأحدث (FIFO)
-    if (remainingToRepay > 0) {
+    } else if (isTargetAll && remainingToRepay > 0) {
+      // 2. إذا تم اختيار صريح لسداد كافة الشروات (تحديد الكل)
       const otherUnpaid = transactions
-        .filter((t) => isBuyerMatch(t) && (!hasSpecificTarget || t.id !== targetTransactionId))
+        .filter((t) => isBuyerMatch(t))
         .sort((a, b) => {
           const aTs = Number(a.timestamp) || (a.dateStr ? new Date(a.dateStr.replace(/\//g, '-')).getTime() : 0);
           const bTs = Number(b.timestamp) || (b.dateStr ? new Date(b.dateStr.replace(/\//g, '-')).getTime() : 0);
@@ -1898,6 +1897,10 @@ function AppInner() {
     let autoDesc = `سداد دين المشتري: ${buyerName} خصماً من رصيد القدمة`;
     if (hasSpecificTarget) {
       autoDesc += ` (سداد فاتورة/شروة #${targetTransactionId})`;
+    } else if (isTargetAll) {
+      autoDesc += ` (سداد كافة الشروات المعلقة)`;
+    } else {
+      autoDesc += ` (دفعة على الحساب من إجمالي الدين)`;
     }
     const advanceBreakdown = affectedTransactions
       .filter((at) => at.advanceUsed && at.advanceUsed > 0)
