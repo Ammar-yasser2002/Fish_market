@@ -412,7 +412,9 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     if (settlementType === 'association_cash') return totalBuyer;
     if (settlementType === 'association_credit') return 0;
     if (settlementType === 'partial_cash') {
-      const p = typeof buyerPaidAmountInput === 'number' ? buyerPaidAmountInput : Number(buyerPaidAmountInput) || 0;
+      const raw = String(buyerPaidAmountInput ?? '').trim();
+      const normalized = raw.replace(/[٠-٩]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]);
+      const p = Number(normalized) || 0;
       return Math.min(totalBuyer, Math.max(0, p));
     }
     if (settlementType === 'direct_cash') return financials.harajProfit;
@@ -1150,12 +1152,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 <div className="flex items-center gap-2">
                   <label className="font-bold text-slate-700 text-xs">المبلغ المقبوض نقداً الآن بالدرج:</label>
                   <input
-                    type="number"
-                    min="0"
-                    max={financials.totalFromBuyer}
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
+                    dir="ltr"
                     value={buyerPaidAmountInput}
-                    onChange={(e) => setBuyerPaidAmountInput(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[٠-٩]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]);
+                      setBuyerPaidAmountInput(val);
+                    }}
                     className="w-32 font-mono font-bold text-sm bg-[#FEF9D7] border border-amber-300/80 rounded-none p-1.5 text-center text-slate-900 focus:bg-[#FFFDF0] focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0"
                   />

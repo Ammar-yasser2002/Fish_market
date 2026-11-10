@@ -21,6 +21,7 @@ import {
 } from '../utils/calculations';
 import {
   dedupeTransactionCashEntriesWithRemoved,
+  findUnlinkedRepaymentForTransaction,
   removeTransactionLinkedCashEntries,
 } from '../utils/cashEntrySync';
 
@@ -270,6 +271,118 @@ export function executeUpdateTransaction(
     };
     nextCashEntries = [newPayoutEntry, ...nextCashEntries];
     cashEntriesToPersist.push(newPayoutEntry);
+  }
+
+  // مزامنة سندات سداد دين المشتري (buyer_debt_repayment) مع الفاتورة المعدلة
+  const targetBuyerPaid =
+    finalTrx.settlementType === 'association_credit'
+      ? 0
+      : typeof finalTrx.buyerPaidAmount === 'number'
+      ? finalTrx.buyerPaidAmount
+      : typeof finalTrx.paidAtPosBuyerAmount === 'number'
+      ? finalTrx.paidAtPosBuyerAmount
+      : finalTrx.paymentStatus === 'pending' || finalTrx.paymentStatus === 'unpaid'
+      ? 0
+      : finalTrx.totalFromBuyer || 0;
+
+  const linkedBuyerRepaymentEntries = nextCashEntries.filter(
+    (e) =>
+      (e.type === 'buyer_debt_repayment' || e.type === 'buyer_advance_repayment') &&
+      (e.transactionId === finalTrx.id ||
+        e.referenceId === finalTrx.id ||
+        (e.description && (e.description.includes(finalTrx.id) || e.description.includes(`#${finalTrx.id}`))))
+  );
+
+  // إذا لم نجد سنداً مرتبطاً برقم الفاتورة مباشرة، نبحث عن سند سداد كان يطابق بيانات الفاتورة السابقة
+  if (linkedBuyerRepaymentEntries.length === 0 && originalTrx) {
+    const prevPaid =
+      typeof originalTrx.buyerPaidAmount === 'number'
+        ? originalTrx.buyerPaidAmount
+        : typeof originalTrx.paidAtPosBuyerAmount === 'number'
+        ? originalTrx.paidAtPosBuyerAmount
+        : originalTrx.paymentStatus === 'paid'
+        ? originalTrx.totalFromBuyer || 0
+        : 0;
+
+    if (prevPaid > 0) {
+      const unlinked = findUnlinkedRepaymentForTransaction(nextCashEntries, {
+        buyerId: finalTrx.buyerId,
+        buyerName: finalTrx.buyerName,
+        previousPaidAmount: prevPaid,
+      });
+      if (unlinked.length === 1) {
+        linkedBuyerRepaymentEntries.push(unlinked[0]);
+      }
+    }
+  }
+
+  if (linkedBuyerRepaymentEntries.length > 0) {
+    if (targetBuyerPaid <= 0) {
+      // تم إلغاء السداد بالكامل أو تحويل الفاتورة لآجل -> حذف سندات السداد
+      nextCashEntries = nextCashEntries.filter(
+        (e) => !linkedBuyerRepaymentEntries.some((le) => le.id === e.id)
+      );
+      linkedBuyerRepaymentEntries.forEach((le) => {
+        if (!cashEntryIdsToDelete.includes(le.id)) {
+          cashEntryIdsToDelete.push(le.id);
+        }
+      });
+      // إزالة أي سند من سندات السداد الملغاة من مصفوفة الحفظ إن كان موجوداً بها
+      for (let i = cashEntriesToPersist.length - 1; i >= 0; i--) {
+        if (linkedBuyerRepaymentEntries.some((le) => le.id === cashEntriesToPersist[i].id)) {
+          cashEntriesToPersist.splice(i, 1);
+        }
+      }
+    } else {
+      // تعديل السند الأساسي ليطابق المبلغ الجديد (مثلاً تعديل السند من 102000 إلى 50000)
+      const primaryRepayment = linkedBuyerRepaymentEntries[0];
+      const otherRepayments = linkedBuyerRepaymentEntries.slice(1);
+
+      if (otherRepayments.length > 0) {
+        nextCashEntries = nextCashEntries.filter(
+          (e) => !otherRepayments.some((oe) => oe.id === e.id)
+        );
+        otherRepayments.forEach((oe) => {
+          if (!cashEntryIdsToDelete.includes(oe.id)) {
+            cashEntryIdsToDelete.push(oe.id);
+          }
+        });
+        for (let i = cashEntriesToPersist.length - 1; i >= 0; i--) {
+          if (otherRepayments.some((oe) => oe.id === cashEntriesToPersist[i].id)) {
+            cashEntriesToPersist.splice(i, 1);
+          }
+        }
+      }
+
+      const isEx =
+        primaryRepayment.payoutMethod === 'exchange' ||
+        primaryRepayment.repaymentMethod === 'exchange' ||
+        primaryRepayment.category === 'سداد دين عبر الصرافة';
+
+      const updatedPrimaryRepayment: CashEntry = {
+        ...primaryRepayment,
+        amount: targetBuyerPaid,
+        transactionId: finalTrx.id,
+        referenceId: finalTrx.id,
+        contactId: finalTrx.buyerId || primaryRepayment.contactId,
+        contactName: finalTrx.buyerName || primaryRepayment.contactName,
+        category: isEx ? 'سداد دين عبر الصرافة' : 'سداد دين مشتري',
+        description: isEx
+          ? `سداد دين المشتري عبر الصرافة (${primaryRepayment.exchangeName || 'حوالة صرافة'}): ${finalTrx.buyerName || primaryRepayment.contactName || 'مشتري'} (سداد فاتورة/شروة #${finalTrx.id})`
+          : `سداد دين المشتري: ${finalTrx.buyerName || primaryRepayment.contactName || 'مشتري'} (سداد فاتورة/شروة #${finalTrx.id})`,
+      };
+
+      nextCashEntries = nextCashEntries.map((e) =>
+        e.id === updatedPrimaryRepayment.id ? updatedPrimaryRepayment : e
+      );
+
+      const persistIdx = cashEntriesToPersist.findIndex((e) => e.id === updatedPrimaryRepayment.id);
+      if (persistIdx !== -1) {
+        cashEntriesToPersist[persistIdx] = updatedPrimaryRepayment;
+      } else {
+        cashEntriesToPersist.push(updatedPrimaryRepayment);
+      }
+    }
   }
 
   return {
