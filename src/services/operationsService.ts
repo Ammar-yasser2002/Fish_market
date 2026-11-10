@@ -151,9 +151,8 @@ export function executeUpdateTransaction(
           const remainingTax = Math.max(0, (t.buyerTaxAmount || 0) - origPaid);
           const targetDebt = isPriceIncreased ? 0 : remainingTax;
 
-          const audit = `[تمت تسوية الشروة آلياً بسداد المشتري الجديد (${finalTrx.buyerName}) للفاتورة #${finalTrx.id}${
-            !isPriceIncreased && targetDebt > 0 ? ` - يتبقى سداد الضريبة السابقة بمبلغ ${targetDebt}` : ''
-          }]`;
+          const audit = `[تمت تسوية الشروة آلياً بسداد المشتري الجديد (${finalTrx.buyerName}) للفاتورة #${finalTrx.id}${!isPriceIncreased && targetDebt > 0 ? ` - يتبقى سداد الضريبة السابقة بمبلغ ${targetDebt}` : ''
+            }]`;
 
           settledOriginalTrx = {
             ...t,
@@ -176,10 +175,10 @@ export function executeUpdateTransaction(
     typeof finalTrx.sellerPaidAmount === 'number'
       ? finalTrx.sellerPaidAmount
       : typeof finalTrx.paidAtPosAmount === 'number'
-      ? finalTrx.paidAtPosAmount
-      : finalTrx.sellerPaidStatus === 'unpaid'
-      ? 0
-      : finalTrx.netToSeller || 0;
+        ? finalTrx.paidAtPosAmount
+        : finalTrx.sellerPaidStatus === 'unpaid'
+          ? 0
+          : finalTrx.netToSeller || 0;
 
   const { kept: dedupedEntries, removed: removedByDedupe } = dedupeTransactionCashEntriesWithRemoved(
     [...currentCashEntries],
@@ -224,11 +223,10 @@ export function executeUpdateTransaction(
         referenceId: finalTrx.id,
         contactId: finalTrx.sellerId,
         contactName: finalTrx.sellerName,
-        description: `تسليم مستحقات الصياد ${
-          finalTrx.sellerPayoutMethod === 'exchange'
+        description: `تسليم مستحقات الصياد ${finalTrx.sellerPayoutMethod === 'exchange'
             ? `عبر الصرافة (${finalTrx.sellerExchangeName || 'حوالة صرافة'})`
             : 'نقداً'
-        }: ${finalTrx.sellerName || 'صياد'} - تسليم وصرف مستحقات الفاتورة #${finalTrx.id}`,
+          }: ${finalTrx.sellerName || 'صياد'} - تسليم وصرف مستحقات الفاتورة #${finalTrx.id}`,
         payoutMethod: finalTrx.sellerPayoutMethod || primaryEntry.payoutMethod || 'cash',
         exchangeName: finalTrx.sellerPayoutMethod === 'exchange' ? finalTrx.sellerExchangeName : undefined,
         category:
@@ -256,11 +254,10 @@ export function executeUpdateTransaction(
           ? 'تسليم مستحقات عبر الصرافة'
           : 'تسليم مستحقات صياد',
       amount: targetSellerPaid,
-      description: `تسليم مستحقات الصياد ${
-        finalTrx.sellerPayoutMethod === 'exchange'
+      description: `تسليم مستحقات الصياد ${finalTrx.sellerPayoutMethod === 'exchange'
           ? `عبر الصرافة (${finalTrx.sellerExchangeName || 'حوالة صرافة'})`
           : 'نقداً'
-      }: ${finalTrx.sellerName || 'صياد'} - تسليم وصرف مستحقات الفاتورة #${finalTrx.id}`,
+        }: ${finalTrx.sellerName || 'صياد'} - تسليم وصرف مستحقات الفاتورة #${finalTrx.id}`,
       performedBy: 'أمين الصندوق',
       contactId: finalTrx.sellerId,
       contactName: finalTrx.sellerName,
@@ -278,12 +275,12 @@ export function executeUpdateTransaction(
     finalTrx.settlementType === 'association_credit'
       ? 0
       : typeof finalTrx.buyerPaidAmount === 'number'
-      ? finalTrx.buyerPaidAmount
-      : typeof finalTrx.paidAtPosBuyerAmount === 'number'
-      ? finalTrx.paidAtPosBuyerAmount
-      : finalTrx.paymentStatus === 'pending' || finalTrx.paymentStatus === 'unpaid'
-      ? 0
-      : finalTrx.totalFromBuyer || 0;
+        ? finalTrx.buyerPaidAmount
+        : typeof finalTrx.paidAtPosBuyerAmount === 'number'
+          ? finalTrx.paidAtPosBuyerAmount
+          : finalTrx.paymentStatus === 'pending' || finalTrx.paymentStatus === 'unpaid'
+            ? 0
+            : finalTrx.totalFromBuyer || 0;
 
   const linkedBuyerRepaymentEntries = nextCashEntries.filter(
     (e) =>
@@ -299,10 +296,10 @@ export function executeUpdateTransaction(
       typeof originalTrx.buyerPaidAmount === 'number'
         ? originalTrx.buyerPaidAmount
         : typeof originalTrx.paidAtPosBuyerAmount === 'number'
-        ? originalTrx.paidAtPosBuyerAmount
-        : originalTrx.paymentStatus === 'paid'
-        ? originalTrx.totalFromBuyer || 0
-        : 0;
+          ? originalTrx.paidAtPosBuyerAmount
+          : originalTrx.paymentStatus === 'paid'
+            ? originalTrx.totalFromBuyer || 0
+            : 0;
 
     if (prevPaid > 0) {
       const unlinked = findUnlinkedRepaymentForTransaction(nextCashEntries, {
@@ -476,6 +473,33 @@ export function executeRepayBuyerDebt(
     );
   };
 
+  const buyerTrxs = currentTransactions.filter(isBuyerMatch);
+  const unpaidBuyerTrxs = buyerTrxs
+    .filter((t) => getTransactionBuyerDebt(t) > 0)
+    .sort((a, b) => {
+      const aTs = Number(a.timestamp) || (a.dateStr ? new Date(a.dateStr.replace(/\//g, '-')).getTime() : 0);
+      const bTs = Number(b.timestamp) || (b.dateStr ? new Date(b.dateStr.replace(/\//g, '-')).getTime() : 0);
+      return aTs - bTs;
+    });
+
+  const totalInvoiceDebt = unpaidBuyerTrxs.reduce((sum, t) => sum + getTransactionBuyerDebt(t), 0);
+
+  const priorGeneralRepayments = currentCashEntries
+    .filter((c) => {
+      if (c.type !== 'buyer_debt_repayment' && c.type !== 'buyer_advance_repayment') return false;
+      const cId = (c.contactId || '').trim().toLowerCase();
+      const cName = (c.contactName || '').trim().toLowerCase();
+      const match =
+        (normTargetId && (cId === normTargetId || cName === normTargetId)) ||
+        (normTargetName && (cId === normTargetName || cName === normTargetName));
+      if (!match) return false;
+      return !c.transactionId && !c.referenceId;
+    })
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+  const netRemainingDebtBefore = Math.max(0, totalInvoiceDebt - priorGeneralRepayments);
+  const isPayingFullRemainingDebt = amount >= (netRemainingDebtBefore - 0.5);
+
   // 1. سداد الفاتورة المحددة بالاسم أولاً إن وُجدت
   if (hasSpecificTarget) {
     const targetTrx = currentTransactions.find((t) => t.id === targetTransactionId);
@@ -504,45 +528,59 @@ export function executeRepayBuyerDebt(
         });
       }
     }
-  } else if (isTargetAll) {
-    // 2. إذا تم اختيار صريح لسداد كافة الشروات المعلقة (تحديد الكل)
-    const otherUnpaid = currentTransactions
-      .filter((t) => isBuyerMatch(t))
-      .sort((a, b) => {
-        const aTs = Number(a.timestamp) || (a.dateStr ? new Date(a.dateStr.replace(/\//g, '-')).getTime() : 0);
-        const bTs = Number(b.timestamp) || (b.dateStr ? new Date(b.dateStr.replace(/\//g, '-')).getTime() : 0);
-        return aTs - bTs; // الأقدم أولاً
+  } else if (isPayingFullRemainingDebt || isTargetAll) {
+    // 2. سداد إجمالي الدين بالكامل (أو اختيار تحديد الكل): إغلاق وتصفية كافة الفواتير المعلقة لتصبح مسددة بالكامل
+    for (const t of unpaidBuyerTrxs) {
+      const debt = getTransactionBuyerDebt(t);
+      affectedTransactions.push({
+        id: t.id,
+        advanceUsed: t.buyerAdvanceUsed,
+        debtPaid: debt,
+        remainingAfter: 0,
       });
 
-    for (const t of otherUnpaid) {
-      if (remainingToRepay <= 0) break;
-      const currentDebt = getTransactionBuyerDebt(t);
-      if (currentDebt > 0) {
-        const deduct = Math.min(remainingToRepay, currentDebt);
-        remainingToRepay -= deduct;
-        const newDebt = Math.max(0, currentDebt - deduct);
-        const newPaid = (t.buyerPaidAmount || 0) + deduct;
-        const newStatus: 'paid' | 'pending' | 'settled' =
-          newDebt === 0 ? 'paid' : 'pending';
-
+      updatedMap.set(t.id, {
+        ...t,
+        buyerPaidAmount: t.totalFromBuyer || (t.buyerPaidAmount || 0) + debt,
+        buyerRemainingDebt: 0,
+        paidAtPosBuyerAmount:
+          t.settlementType === 'association_credit'
+            ? t.paidAtPosBuyerAmount
+            : (t.totalFromBuyer || t.paidAtPosBuyerAmount),
+        paymentStatus: 'paid',
+        isEdited: true,
+        editedAt: Date.now(),
+      });
+    }
+  } else {
+    // 3. سداد جزء من الدين: تسوية الفواتير التي تمت تغطيتها بالكامل 100% فقط دون وضع "تسديد جزئي" على أي فاتورة متبقية
+    let availableToSettle = priorGeneralRepayments + amount;
+    for (const t of unpaidBuyerTrxs) {
+      const debt = getTransactionBuyerDebt(t);
+      if (debt > 0 && availableToSettle >= (debt - 0.5)) {
+        availableToSettle -= debt;
         affectedTransactions.push({
           id: t.id,
           advanceUsed: t.buyerAdvanceUsed,
-          debtPaid: deduct,
-          remainingAfter: newDebt,
+          debtPaid: debt,
+          remainingAfter: 0,
         });
 
         updatedMap.set(t.id, {
           ...t,
-          buyerPaidAmount: newPaid,
-          buyerRemainingDebt: newDebt,
-          paymentStatus: newStatus as any,
+          buyerPaidAmount: t.totalFromBuyer || (t.buyerPaidAmount || 0) + debt,
+          buyerRemainingDebt: 0,
+          paidAtPosBuyerAmount:
+            t.settlementType === 'association_credit'
+              ? t.paidAtPosBuyerAmount
+              : (t.totalFromBuyer || t.paidAtPosBuyerAmount),
+          paymentStatus: 'paid',
+          isEdited: true,
+          editedAt: Date.now(),
         });
       }
     }
   }
-  // 3. في حال لم يتم تحديد أي فاتورة (سداد عام من إجمالي الدين):
-  // لا نقوم بتعديل أي فاتورة إطلاقاً ولا نظهر أي فاتورة بحالة "تسديد جزئي"، بل تبقى الفواتير بأصلها ويُقيد السند كدفعة عامة على الحساب.
 
   const modifiedTransactions: Transaction[] = [];
   let updatedTrxs = currentTransactions.map((t) => {
@@ -723,8 +761,8 @@ export function executePayoutSeller(
         t.sellerPaidStatus === 'paid'
           ? netDue
           : (typeof t.sellerPaidAmount === 'number'
-              ? t.sellerPaidAmount
-              : (typeof t.paidAtPosAmount === 'number' ? t.paidAtPosAmount : 0));
+            ? t.sellerPaidAmount
+            : (typeof t.paidAtPosAmount === 'number' ? t.paidAtPosAmount : 0));
       const unpaidForTrx = Math.max(0, netDue - currentPaid);
 
       if (unpaidForTrx > 0) {
@@ -740,9 +778,9 @@ export function executePayoutSeller(
           sellerPaidStatus: newStatus,
           ...(payoutMethod === 'exchange'
             ? {
-                sellerPayoutMethod: 'exchange',
-                sellerExchangeName: exchangeName?.trim() || undefined,
-              }
+              sellerPayoutMethod: 'exchange',
+              sellerExchangeName: exchangeName?.trim() || undefined,
+            }
             : {}),
         };
         modifiedTransactions.push(updatedT);
@@ -785,11 +823,9 @@ export function executePayoutSeller(
       type: 'seller_payout',
       category: payoutMethod === 'exchange' ? 'تسليم مستحقات عبر الصرافة' : 'تسليم مستحقات صياد',
       amount,
-      description: `تسليم مستحقات الصياد ${
-        payoutMethod === 'exchange' ? `عبر الصرافة (${exchangeName || 'حوالة صرافة'})` : 'نقداً'
-      }: ${sellerName}${settleAdvanceAmount > 0 ? ` (بعد مقاصة سلفة بقيمة ${settleAdvanceAmount} ريال)` : ''}${
-        notes ? ` - ${notes}` : ''
-      }`,
+      description: `تسليم مستحقات الصياد ${payoutMethod === 'exchange' ? `عبر الصرافة (${exchangeName || 'حوالة صرافة'})` : 'نقداً'
+        }: ${sellerName}${settleAdvanceAmount > 0 ? ` (بعد مقاصة سلفة بقيمة ${settleAdvanceAmount} ريال)` : ''}${notes ? ` - ${notes}` : ''
+        }`,
       performedBy: 'أمين الصندوق',
       contactId: sellerId,
       contactName: sellerName,

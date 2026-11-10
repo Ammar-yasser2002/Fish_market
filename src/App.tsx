@@ -801,10 +801,10 @@ function AppInner() {
         setCashEntries(result.nextCashEntries);
         saveCashEntries(result.nextCashEntries);
         result.cashEntriesToPersist.forEach((ce) => {
-          saveCashEntryToLocalDb(ce).catch(() => {});
+          saveCashEntryToLocalDb(ce).catch(() => { });
         });
         result.cashEntryIdsToDelete.forEach((id) => {
-          deleteCashEntryFromLocalDb(id).catch(() => {});
+          deleteCashEntryFromLocalDb(id).catch(() => { });
         });
       }
 
@@ -833,7 +833,7 @@ function AppInner() {
         setCashEntries(result.nextCashEntries);
         saveCashEntries(result.nextCashEntries);
         result.removedCashEntryIds.forEach((entryId) => {
-          deleteCashEntryFromLocalDb(entryId).catch(() => {});
+          deleteCashEntryFromLocalDb(entryId).catch(() => { });
         });
       }
     } catch (err) {
@@ -1795,6 +1795,31 @@ function AppInner() {
       return getTransactionBuyerDebt(t);
     };
 
+    const unpaidBuyerTrxs = transactions
+      .filter((t) => isBuyerMatch(t) && getTrxDebt(t) > 0)
+      .sort((a, b) => {
+        const aTs = Number(a.timestamp) || (a.dateStr ? new Date(a.dateStr.replace(/\//g, '-')).getTime() : 0);
+        const bTs = Number(b.timestamp) || (b.dateStr ? new Date(b.dateStr.replace(/\//g, '-')).getTime() : 0);
+        return aTs - bTs;
+      });
+
+    const totalInvoiceDebt = unpaidBuyerTrxs.reduce((sum, t) => sum + getTrxDebt(t), 0);
+    const priorGeneralRepayments = cashEntries
+      .filter((c) => {
+        if (c.type !== 'buyer_debt_repayment' && c.type !== 'buyer_advance_repayment') return false;
+        const cId = (c.contactId || '').trim().toLowerCase();
+        const cName = (c.contactName || '').trim().toLowerCase();
+        const match =
+          (normTargetId && (cId === normTargetId || cName === normTargetId)) ||
+          (normTargetName && (cId === normTargetName || cName === normTargetName));
+        if (!match) return false;
+        return !c.transactionId && !c.referenceId;
+      })
+      .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+    const netRemainingDebtBefore = Math.max(0, totalInvoiceDebt - priorGeneralRepayments);
+    const isPayingFullRemainingDebt = amount >= (netRemainingDebtBefore - 0.5);
+
     // 1. إذا تم استهداف فاتورة محددة
     if (hasSpecificTarget) {
       const targetTrx = transactions.find((t) => t.id === targetTransactionId);
@@ -1810,7 +1835,7 @@ function AppInner() {
 
           affectedTransactions.push({
             id: targetTrx.id,
-            advanceUsed: targetTrx.buyerAdvanceUsed,
+            advanceUsed: (targetTrx.buyerAdvanceUsed || 0) + deduct,
             debtPaid: deduct,
             remainingAfter: newDebt,
           });
@@ -1818,44 +1843,63 @@ function AppInner() {
           updatedMap.set(targetTrx.id, {
             ...targetTrx,
             buyerPaidAmount: newPaid,
+            buyerAdvanceUsed: (targetTrx.buyerAdvanceUsed || 0) + deduct,
             buyerRemainingDebt: newDebt,
             paymentStatus: newStatus as any,
           });
         }
       }
-    } else if (isTargetAll && remainingToRepay > 0) {
-      // 2. إذا تم اختيار صريح لسداد كافة الشروات (تحديد الكل)
-      const otherUnpaid = transactions
-        .filter((t) => isBuyerMatch(t))
-        .sort((a, b) => {
-          const aTs = Number(a.timestamp) || (a.dateStr ? new Date(a.dateStr.replace(/\//g, '-')).getTime() : 0);
-          const bTs = Number(b.timestamp) || (b.dateStr ? new Date(b.dateStr.replace(/\//g, '-')).getTime() : 0);
-          return aTs - bTs;
+    } else if (isPayingFullRemainingDebt || isTargetAll) {
+      // 2. سداد إجمالي الدين بالكامل خصماً من القدمة: إغلاق وتصفية كافة الفواتير المعلقة فوراً
+      for (const t of unpaidBuyerTrxs) {
+        const debt = getTrxDebt(t);
+        affectedTransactions.push({
+          id: t.id,
+          advanceUsed: (t.buyerAdvanceUsed || 0) + debt,
+          debtPaid: debt,
+          remainingAfter: 0,
         });
 
-      for (const t of otherUnpaid) {
-        if (remainingToRepay <= 0) break;
-        const currentDebt = getTrxDebt(t);
-        if (currentDebt > 0) {
-          const deduct = Math.min(remainingToRepay, currentDebt);
-          remainingToRepay -= deduct;
-          const newDebt = Math.max(0, currentDebt - deduct);
-          const newPaid = (t.buyerPaidAmount || 0) + deduct;
-          const newStatus: 'paid' | 'pending' | 'settled' | 'partial' =
-            newDebt === 0 ? 'paid' : 'partial';
-
+        updatedMap.set(t.id, {
+          ...t,
+          buyerPaidAmount: t.totalFromBuyer || (t.buyerPaidAmount || 0) + debt,
+          buyerAdvanceUsed: (t.buyerAdvanceUsed || 0) + debt,
+          buyerRemainingDebt: 0,
+          paidAtPosBuyerAmount:
+            t.settlementType === 'association_credit'
+              ? t.paidAtPosBuyerAmount
+              : (t.totalFromBuyer || t.paidAtPosBuyerAmount),
+          paymentStatus: 'paid',
+          isEdited: true,
+          editedAt: Date.now(),
+        });
+      }
+    } else {
+      // 3. سداد جزئي: تسوية الفواتير التي تمت تغطيتها بالكامل 100% فقط
+      let availableToSettle = priorGeneralRepayments + amount;
+      for (const t of unpaidBuyerTrxs) {
+        const debt = getTrxDebt(t);
+        if (debt > 0 && availableToSettle >= (debt - 0.5)) {
+          availableToSettle -= debt;
           affectedTransactions.push({
             id: t.id,
-            advanceUsed: t.buyerAdvanceUsed,
-            debtPaid: deduct,
-            remainingAfter: newDebt,
+            advanceUsed: (t.buyerAdvanceUsed || 0) + debt,
+            debtPaid: debt,
+            remainingAfter: 0,
           });
 
           updatedMap.set(t.id, {
             ...t,
-            buyerPaidAmount: newPaid,
-            buyerRemainingDebt: newDebt,
-            paymentStatus: newStatus as any,
+            buyerPaidAmount: t.totalFromBuyer || (t.buyerPaidAmount || 0) + debt,
+            buyerAdvanceUsed: (t.buyerAdvanceUsed || 0) + debt,
+            buyerRemainingDebt: 0,
+            paidAtPosBuyerAmount:
+              t.settlementType === 'association_credit'
+                ? t.paidAtPosBuyerAmount
+                : (t.totalFromBuyer || t.paidAtPosBuyerAmount),
+            paymentStatus: 'paid',
+            isEdited: true,
+            editedAt: Date.now(),
           });
         }
       }
@@ -2442,12 +2486,12 @@ function AppInner() {
                 disabled={isSendingEmailBackup}
                 onClick={handleSendEmailBackup}
                 className={`flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all shadow-2xs cursor-pointer border ${isSendingEmailBackup
-                    ? 'bg-indigo-100 text-indigo-700 border-indigo-200 cursor-wait'
-                    : emailBackupStatus?.type === 'success'
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                      : emailBackupStatus?.type === 'error'
-                        ? 'bg-rose-50 text-rose-800 border-rose-300'
-                        : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-900 border-indigo-200'
+                  ? 'bg-indigo-100 text-indigo-700 border-indigo-200 cursor-wait'
+                  : emailBackupStatus?.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                    : emailBackupStatus?.type === 'error'
+                      ? 'bg-rose-50 text-rose-800 border-rose-300'
+                      : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-900 border-indigo-200'
                   }`}
                 title="إرسال نسخة احتياطية فوراً إلى البريد الإلكتروني"
               >

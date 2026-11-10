@@ -1267,6 +1267,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   // Unpaid purchases/transactions for selected buyer
   const selectedBuyerUnpaidTransactions = useMemo(() => {
     if (!selectedBuyer) return [];
+    if (selectedBuyerDebt <= 0) return [];
     return transactions.filter((t) => {
       const isBuyer = isExactContactMatch(t.buyerId, t.buyerName, selectedBuyer.id, selectedBuyer.name);
       if (!isBuyer) return false;
@@ -1282,7 +1283,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
       return debt > 0;
     });
-  }, [selectedBuyer, transactions]);
+  }, [selectedBuyer, selectedBuyerDebt, transactions]);
 
   // الشروات المعلقة التي تمت إعادة بيعها لمشترين آخرين (شروة وبيعة)
   const resoldPendingTransactions = useMemo(() => {
