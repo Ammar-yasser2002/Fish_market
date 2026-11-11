@@ -1291,6 +1291,20 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       const isBuyer = isExactContactMatch(t.buyerId, t.buyerName, selectedBuyer.id, selectedBuyer.name);
       if (!isBuyer) return false;
 
+      const isResold = t.wasResold || Boolean(t.resoldToTransactionId);
+      if (isResold && t.paymentStatus === 'settled') return false;
+
+      // فحص ما إذا كانت الفاتورة مرتبطة بسند سداد مخصص
+      const hasSpecificCash = (cashEntries || []).some(
+        (c) => (c.transactionId === t.id || c.referenceId === t.id) &&
+          (c.type === 'buyer_debt_repayment' || c.type === 'buyer_advance_repayment')
+      );
+
+      const isCredit = t.settlementType === 'association_credit';
+      if (isCredit && selectedBuyerDebt > 0 && !hasSpecificCash && !(t.buyerAdvanceUsed && t.buyerAdvanceUsed >= (t.totalFromBuyer || 0))) {
+        return true;
+      }
+
       const debt =
         t.buyerRemainingDebt !== undefined
           ? t.buyerRemainingDebt
@@ -1302,7 +1316,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
       return debt > 0;
     });
-  }, [selectedBuyer, selectedBuyerDebt, transactions]);
+  }, [selectedBuyer, selectedBuyerDebt, transactions, cashEntries]);
 
   // الشروات المعلقة التي تمت إعادة بيعها لمشترين آخرين (شروة وبيعة)
   const resoldPendingTransactions = useMemo(() => {
@@ -2963,7 +2977,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   ) : (
                     buyerTransactions.map((t) => {
                       const resoldInfo = getResoldDetails(t);
-                      const isPaidInFull = !resoldInfo.isResold && (
+                      const hasSpecificCash = (cashEntries || []).some(
+                        (c) => (c.transactionId === t.id || c.referenceId === t.id) &&
+                          (c.type === 'buyer_debt_repayment' || c.type === 'buyer_advance_repayment')
+                      );
+                      const isCredit = t.settlementType === 'association_credit';
+                      const isFalselyClosedCredit = isCredit && selectedBuyerDebt > 0 && !hasSpecificCash && !(t.buyerAdvanceUsed && t.buyerAdvanceUsed >= (t.totalFromBuyer || 0));
+
+                      const isPaidInFull = !resoldInfo.isResold && !isFalselyClosedCredit && (
                         t.paymentStatus === 'paid' ||
                         t.paymentStatus === 'settled' ||
                         (t.buyerRemainingDebt !== undefined && t.buyerRemainingDebt <= 0) ||
@@ -2974,6 +2995,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                       const isPartial =
                         !resoldInfo.isResold &&
                         !isPaidInFull &&
+                        !isFalselyClosedCredit &&
                         t.buyerRemainingDebt !== undefined &&
                         t.buyerRemainingDebt > 0 &&
                         t.buyerRemainingDebt < t.totalFromBuyer;

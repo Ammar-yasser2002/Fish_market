@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Contact, Transaction, MarketSettings, CashEntry } from '../types';
-import { formatCurrency, formatNumber, formatArabicDayOnly, tafqeet, formatGregorianDate, formatGregorianTime, getTodayLocalYMD, isSameCalendarDay, parseLocalDate, getTransactionBuyerDebt } from '../utils/calculations';
+import { formatCurrency, formatNumber, formatArabicDayOnly, tafqeet, formatGregorianDate, formatGregorianTime, getTodayLocalYMD, isSameCalendarDay, parseLocalDate, getTransactionBuyerDebt, calculateBuyerTotalDebt } from '../utils/calculations';
 import { WhatsAppIcon, sendDebtorStatementViaWhatsApp } from '../utils/whatsapp';
 import {
   exportAllDebtorsStatementPdfA4,
@@ -243,20 +243,8 @@ export const AllDebtorsStatementModal: React.FC<AllDebtorsStatementModalProps> =
       // Accurate comprehensive total paid for this buyer
       record.totalPaid = Math.max(trxPaidTotal, cashRepaidTotal);
 
-      // خصم سندات السداد العامة على الحساب (دفعة من إجمالي الدين) غير المربوطة بفواتير محددة
-      const unlinkedRepayments = (cashEntries || [])
-        .filter((c) => {
-          if (c.type !== 'buyer_debt_repayment' && c.type !== 'buyer_advance_in') return false;
-          if (scope === 'today' && !isSameCalendarDay(c.dateStr || (c as any).timestamp, new Date())) return false;
-          const isMatch =
-            (c.contactId && c.contactId === record.buyerId) ||
-            (c.contactName && c.contactName.trim() === record.buyerName.trim());
-          if (!isMatch) return false;
-          return !c.transactionId && !c.referenceId;
-        })
-        .reduce((sum, c) => sum + (c.amount || 0), 0);
-
-      record.remainingDebt = Math.max(0, record.remainingDebt - unlinkedRepayments);
+      // حساب صافي دين المشتري المتبقي بدقة عبر المحرك الموحد
+      record.remainingDebt = calculateBuyerTotalDebt(allBuyerTransactions, cashEntries, record.buyerId, record.buyerName);
 
       // Payments made today specifically
       const todayBuyerTransactions = allBuyerTransactions.filter((t) =>

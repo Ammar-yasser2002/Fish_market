@@ -141,7 +141,7 @@ export const BuyerStatementModal: React.FC<BuyerStatementModalProps> = ({
       const effectiveRemaining = Math.max(0, finalTotal - effectivePaid);
       return {
         totalPaid: effectivePaid,
-        totalRemaining: Math.min(raw.totalRemaining, effectiveRemaining),
+        totalRemaining: effectiveRemaining,
       };
     }
 
@@ -165,10 +165,10 @@ export const BuyerStatementModal: React.FC<BuyerStatementModalProps> = ({
       : (debtMetrics.totalRemaining > 0 ? (buyerMetrics.count || transactions.length) : 0);
   }, [buyerUnpaidTransactions.length, debtMetrics.totalRemaining, buyerMetrics.count, transactions.length]);
 
-  // إجمالي صافي المديونية للمشتري بعد خصم السدادات
+  // إجمالي صافي المديونية للمشتري بعد احتساب كافة الفواتير والسدادات
   const buyerTotalRemainingDebt = useMemo(() => {
-    return Math.max(0, debtMetrics.totalRemaining - totalRepayments);
-  }, [debtMetrics.totalRemaining, totalRepayments]);
+    return debtMetrics.totalRemaining;
+  }, [debtMetrics.totalRemaining]);
 
   // التوزيع اليومي للمديونية للمشتري نفسه
   const buyerDailyDebtBreakdown = useMemo(() => {

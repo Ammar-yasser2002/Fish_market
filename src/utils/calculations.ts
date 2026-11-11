@@ -1115,7 +1115,7 @@ export function getTransactionBuyerDebt(t: Transaction): number {
 }
 
 /**
- * حساب إجمالي صافي دين المشتري بدقة عبر خصم سندات السداد العامة غير المربوطة بفواتير محددة
+ * حساب إجمالي صافي دين المشتري بدقة عبر خصم سندات السداد المقبوضة بالصندوق
  */
 export function calculateBuyerTotalDebt(
   transactions: Transaction[],
@@ -1136,32 +1136,104 @@ export function calculateBuyerTotalDebt(
     );
   };
 
-  const totalInvoiceDebt = (transactions || [])
-    .filter((t) => isMatch(t.buyerId, t.buyerName))
-    .reduce((sum, t) => sum + Math.max(0, getTransactionBuyerDebt(t)), 0);
+  const buyerTrxs = (transactions || []).filter((t) => isMatch(t.buyerId, t.buyerName));
+  if (buyerTrxs.length === 0) return 0;
 
-  const unlinkedRepayments = (cashEntries || [])
+  // 1. حساب إجمالي فواتير الآجل وغير المسددة نقداً في نقطة البيع
+  let totalCreditRequired = 0;
+  let totalPaidAtPos = 0;
+
+  buyerTrxs.forEach((t) => {
+    const resoldInfo = getResoldDetails(t);
+    if (resoldInfo.isResold && resoldInfo.isSettled) return;
+
+    const total = Number(t.totalFromBuyer) || 0;
+    const isFullCash = t.settlementType === 'cash' || t.settlementType === 'association_cash';
+    const isAdvance = t.settlementType === 'buyer_advance';
+
+    if (isFullCash || isAdvance) {
+      return;
+    }
+
+    if (t.settlementType === 'partial_cash') {
+      totalCreditRequired += total;
+      totalPaidAtPos += Math.max(0, Number(t.paidAtPosBuyerAmount) || 0);
+    } else {
+      totalCreditRequired += total;
+    }
+  });
+
+  // 2. إجمالي كافة سندات السداد المقبوضة من المشتري في الصندوق
+  const totalRepayments = (cashEntries || [])
     .filter((c) => {
       if (c.type !== 'buyer_debt_repayment' && c.type !== 'buyer_advance_repayment') return false;
-      if (!isMatch(c.contactId, c.contactName)) return false;
-      return !c.transactionId && !c.referenceId;
+      return isMatch(c.contactId, c.contactName);
     })
     .reduce((sum, c) => sum + (c.amount || 0), 0);
 
-  return Math.max(0, totalInvoiceDebt - unlinkedRepayments);
+  // 3. صافي الدين = إجمالي المشتريات الآجلة - (المدفوع بنقطة البيع + كافة سندات السداد بالصندوق)
+  const netDebt = Math.max(0, totalCreditRequired - totalPaidAtPos - totalRepayments);
+
+  if (totalRepayments === 0) {
+    const rawDebt = buyerTrxs.reduce((sum, t) => sum + Math.max(0, getTransactionBuyerDebt(t)), 0);
+    return rawDebt;
+  }
+
+  return netDebt;
 }
 
 /**
  * Repairs stale buyer debt fields in memory and marks transactions that need persistence.
+ * معالجة وتصحيح الفواتير التي أُغلقت خطأً عند سداد دفعة عامة جزئية من الدين
  */
-export function normalizeBuyerDebtFields(trxs: Transaction[]): {
+export function normalizeBuyerDebtFields(
+  trxs: Transaction[],
+  cashEntries: CashEntry[] = []
+): {
   updatedTrxs: Transaction[];
   hasChanges: boolean;
 } {
   let hasChanges = false;
+
+  // خريطة سندات السداد المرتبطة بفواتير محددة
+  const linkedCashTrxIds = new Set<string>();
+  (cashEntries || []).forEach((c) => {
+    if (c.transactionId) linkedCashTrxIds.add(c.transactionId);
+    if (c.referenceId) linkedCashTrxIds.add(c.referenceId);
+  });
+
   const updatedTrxs = (trxs || []).map((transaction) => {
-    const debt = getTransactionBuyerDebt(transaction);
     const isCredit = transaction.settlementType === 'association_credit';
+    const total = Number(transaction.totalFromBuyer) || 0;
+
+    // فحص ما إذا كانت الفاتورة أُغلقت خطأً دون سداد كامل الحساب ودون وجود سند سداد خاص بها
+    if (
+      isCredit &&
+      (transaction.paymentStatus === 'paid' || transaction.buyerRemainingDebt === 0) &&
+      !linkedCashTrxIds.has(transaction.id) &&
+      !(transaction.buyerAdvanceUsed && transaction.buyerAdvanceUsed >= total)
+    ) {
+      const currentNetDebt = calculateBuyerTotalDebt(
+        trxs,
+        cashEntries,
+        transaction.buyerId,
+        transaction.buyerName
+      );
+
+      // إذا كان المشتري لا يزال مديناً، تُعاد الفاتورة لحالتها الأصلية غير المسددة
+      if (currentNetDebt > 0) {
+        hasChanges = true;
+        return {
+          ...transaction,
+          buyerRemainingDebt: total,
+          buyerPaidAmount: 0,
+          paymentStatus: 'pending',
+          isEdited: false,
+        } as Transaction;
+      }
+    }
+
+    const debt = getTransactionBuyerDebt(transaction);
 
     const updates: Partial<Transaction> = {};
     if (typeof transaction.buyerRemainingDebt !== 'number' || transaction.buyerRemainingDebt !== debt) {

@@ -552,35 +552,9 @@ export function executeRepayBuyerDebt(
         editedAt: Date.now(),
       });
     }
-  } else {
-    // 3. سداد جزء من الدين: تسوية الفواتير التي تمت تغطيتها بالكامل 100% فقط دون وضع "تسديد جزئي" على أي فاتورة متبقية
-    let availableToSettle = priorGeneralRepayments + amount;
-    for (const t of unpaidBuyerTrxs) {
-      const debt = getTransactionBuyerDebt(t);
-      if (debt > 0 && availableToSettle >= (debt - 0.5)) {
-        availableToSettle -= debt;
-        affectedTransactions.push({
-          id: t.id,
-          advanceUsed: t.buyerAdvanceUsed,
-          debtPaid: debt,
-          remainingAfter: 0,
-        });
-
-        updatedMap.set(t.id, {
-          ...t,
-          buyerPaidAmount: t.totalFromBuyer || (t.buyerPaidAmount || 0) + debt,
-          buyerRemainingDebt: 0,
-          paidAtPosBuyerAmount:
-            t.settlementType === 'association_credit'
-              ? t.paidAtPosBuyerAmount
-              : (t.totalFromBuyer || t.paidAtPosBuyerAmount),
-          paymentStatus: 'paid',
-          isEdited: true,
-          editedAt: Date.now(),
-        });
-      }
-    }
   }
+  // 3. في حال لم يتم تحديد أي فاتورة (سداد عام جزئي من إجمالي الدين):
+  // لا نقوم بتعديل أي فاتورة إطلاقاً ولا نظهر أي فاتورة بحالة "تسديد جزئي"، بل تبقى الفواتير بأصلها ويُقيد السند كدفعة عامة على الحساب.
 
   const modifiedTransactions: Transaction[] = [];
   let updatedTrxs = currentTransactions.map((t) => {

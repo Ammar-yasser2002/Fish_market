@@ -596,10 +596,13 @@ function AppInner() {
               saveTransactions(syncedTrx);
             }
 
-            // تطبيع حقول ديون المشترين دون التلاعب بالمبالغ المسددة تلقائياً
+            // Reconcile cash entries
+            const currentCash = (dbCash && dbCash.length > 0 ? dbCash.filter((e) => !e.id.startsWith('CASH-SURP-')) : loadCashEntries().filter((e) => !e.id.startsWith('CASH-SURP-'))) || [];
+
+            // تطبيع حقول ديون المشترين ومعالجة أي فواتير أغلقت خطأً عند سداد دفعة عامة جزئية
             try {
               const activeTrxs = trxNeedsSave ? syncedTrx : (dbTrx && dbTrx.length > 0 ? sanitizeTransactionDates(dbTrx) : transactions);
-              const normalized = normalizeBuyerDebtFields(activeTrxs);
+              const normalized = normalizeBuyerDebtFields(activeTrxs, currentCash);
               if (normalized.hasChanges && isMounted) {
                 setTransactions(normalized.updatedTrxs);
                 saveTransactions(normalized.updatedTrxs);
@@ -611,8 +614,6 @@ function AppInner() {
               console.warn('Error during buyer debts normalization:', recErr);
             }
 
-            // Reconcile cash entries
-            const currentCash = (dbCash && dbCash.length > 0 ? dbCash.filter((e) => !e.id.startsWith('CASH-SURP-')) : loadCashEntries().filter((e) => !e.id.startsWith('CASH-SURP-'))) || [];
             let cashNeedsSave = false;
             const syncedCash = currentCash.map((e) => {
               if (e.contactId && contactIdMap.has(e.contactId)) {
@@ -1874,36 +1875,9 @@ function AppInner() {
           editedAt: Date.now(),
         });
       }
-    } else {
-      // 3. سداد جزئي: تسوية الفواتير التي تمت تغطيتها بالكامل 100% فقط
-      let availableToSettle = priorGeneralRepayments + amount;
-      for (const t of unpaidBuyerTrxs) {
-        const debt = getTrxDebt(t);
-        if (debt > 0 && availableToSettle >= (debt - 0.5)) {
-          availableToSettle -= debt;
-          affectedTransactions.push({
-            id: t.id,
-            advanceUsed: (t.buyerAdvanceUsed || 0) + debt,
-            debtPaid: debt,
-            remainingAfter: 0,
-          });
-
-          updatedMap.set(t.id, {
-            ...t,
-            buyerPaidAmount: t.totalFromBuyer || (t.buyerPaidAmount || 0) + debt,
-            buyerAdvanceUsed: (t.buyerAdvanceUsed || 0) + debt,
-            buyerRemainingDebt: 0,
-            paidAtPosBuyerAmount:
-              t.settlementType === 'association_credit'
-                ? t.paidAtPosBuyerAmount
-                : (t.totalFromBuyer || t.paidAtPosBuyerAmount),
-            paymentStatus: 'paid',
-            isEdited: true,
-            editedAt: Date.now(),
-          });
-        }
-      }
     }
+    // 3. في حال لم يتم تحديد أي فاتورة (سداد عام جزئي من إجمالي الدين):
+    // لا نقوم بتعديل أي فاتورة إطلاقاً ولا نظهر أي فاتورة بحالة "تسديد جزئي"، بل تبقى الفواتير بأصلها ويُقيد السند كدفعة عامة على الحساب.
 
     const updatedTrxs = transactions.map((t) => {
       const modified = updatedMap.get(t.id);
