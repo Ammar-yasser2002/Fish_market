@@ -2532,20 +2532,6 @@ export async function buildFullBuyerStatementHtmlA4(
           : (t.buyerRemainingDebt ?? ((t.paymentStatus as any) === 'debt' || (t.paymentStatus as any) === 'partial' || t.paymentStatus === 'pending' ? t.totalFromBuyer : 0));
         
         const displayDate = formatDisplayDate(t.timestamp, t.dateStr);
-        const weekday = getWeekdayName(t.timestamp, t.dateStr);
-        const fullDateStr = weekday ? `${weekday}، ${displayDate}` : displayDate;
-        const dateKey = t.dateStr || formatGregorianDate(t.timestamp);
-        const previousDateKey = idx > 0
-          ? (transactions[idx - 1].dateStr || formatGregorianDate(transactions[idx - 1].timestamp))
-          : '';
-        const showDateSeparator = idx === 0 || dateKey !== previousDateKey;
-        const dateSeparatorHtml = showDateSeparator ? `
-          <tr>
-            <td colspan="10" style="padding:1px 4px; height:13px; line-height:13px; text-align:center; background:#e0f2fe !important; border:1px solid #bae6fd; color:#0369a1; font-size:8px; font-weight:800; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;">
-              ${fullDateStr}
-            </td>
-          </tr>
-        ` : '';
 
         const items = (t.items && t.items.length > 0) ? t.items : [];
         const hasMultiple = items.length > 1;
@@ -2598,7 +2584,6 @@ export async function buildFullBuyerStatementHtmlA4(
           : `<span style="font-family:monospace; font-weight:bold; font-size:8.5px; color:#0f3b82;">+${formatNumber(t.buyerTaxAmount)}</span>`;
 
         return `
-          ${dateSeparatorHtml}
           <tr style="${idx % 2 === 0 ? 'background:#ffffff !important;' : 'background:#f8fafc !important;'} -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
             <td style="padding:2.5px 2px; text-align:center; border:1px solid #cbd5e1; font-weight:bold; font-family:monospace; font-size:8px; color:#64748b;">${idx + 1}</td>
             <td style="padding:2.5px 2px; text-align:center; border:1px solid #cbd5e1; font-family:monospace; font-weight:bold; font-size:8.5px; color:#0f3b82; white-space:nowrap;">

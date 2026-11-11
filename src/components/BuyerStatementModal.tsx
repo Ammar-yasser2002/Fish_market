@@ -1130,23 +1130,9 @@ export const BuyerStatementModal: React.FC<BuyerStatementModalProps> = ({
                     const resoldInfo = getResoldDetails(t);
                     const isResoldSettled = resoldInfo.isResold && resoldInfo.isSettled;
                     const rem = isResoldSettled ? 0 : getTransactionBuyerDebt(t);
-                    const dateKey = t.dateStr || formatGregorianDate(t.timestamp);
-                    const previousDateKey = index > 0
-                      ? (transactions[index - 1].dateStr || formatGregorianDate(transactions[index - 1].timestamp))
-                      : '';
-                    const showDateSeparator = index === 0 || dateKey !== previousDateKey;
-                    const weekday = getWeekdayName(t.timestamp, t.dateStr);
-                    const dateLabel = `${weekday ? `${weekday}، ` : ''}${formatDisplayDate(t.timestamp, t.dateStr)}`;
 
                     return (
                       <React.Fragment key={t.id}>
-                        {showDateSeparator && (
-                          <tr>
-                            <td colSpan={10} className="bg-blue-100 border-y border-blue-300 p-0.5 text-center">
-                              <span className="text-[10px] font-black text-blue-900 leading-none">{dateLabel}</span>
-                            </td>
-                          </tr>
-                        )}
                         <tr className="hover:bg-slate-50">
                         <td className="p-1 border-l border-slate-300 text-center font-mono font-bold text-slate-500">
                           {index + 1}
