@@ -224,8 +224,8 @@ export function executeUpdateTransaction(
         contactId: finalTrx.sellerId,
         contactName: finalTrx.sellerName,
         description: `تسليم مستحقات الصياد ${finalTrx.sellerPayoutMethod === 'exchange'
-            ? `عبر الصرافة (${finalTrx.sellerExchangeName || 'حوالة صرافة'})`
-            : 'نقداً'
+          ? `عبر الصرافة (${finalTrx.sellerExchangeName || 'حوالة صرافة'})`
+          : 'نقداً'
           }: ${finalTrx.sellerName || 'صياد'} - تسليم وصرف مستحقات الفاتورة #${finalTrx.id}`,
         payoutMethod: finalTrx.sellerPayoutMethod || primaryEntry.payoutMethod || 'cash',
         exchangeName: finalTrx.sellerPayoutMethod === 'exchange' ? finalTrx.sellerExchangeName : undefined,
@@ -255,8 +255,8 @@ export function executeUpdateTransaction(
           : 'تسليم مستحقات صياد',
       amount: targetSellerPaid,
       description: `تسليم مستحقات الصياد ${finalTrx.sellerPayoutMethod === 'exchange'
-          ? `عبر الصرافة (${finalTrx.sellerExchangeName || 'حوالة صرافة'})`
-          : 'نقداً'
+        ? `عبر الصرافة (${finalTrx.sellerExchangeName || 'حوالة صرافة'})`
+        : 'نقداً'
         }: ${finalTrx.sellerName || 'صياد'} - تسليم وصرف مستحقات الفاتورة #${finalTrx.id}`,
       performedBy: 'أمين الصندوق',
       contactId: finalTrx.sellerId,

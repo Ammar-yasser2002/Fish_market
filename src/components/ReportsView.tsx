@@ -1264,6 +1264,25 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     );
   }, [contacts, selectedBuyerId, buyers]);
 
+  // Repayment & payment receipts history for the selected buyer
+  const buyerRepayments = useMemo(() => {
+    if (!selectedBuyer) return [];
+    return (cashEntries || []).filter((e) => {
+      if (e.type !== 'buyer_debt_repayment') return false;
+      return isExactContactMatch(e.contactId, e.contactName, selectedBuyer.id, selectedBuyer.name);
+    });
+  }, [cashEntries, selectedBuyer]);
+
+  const totalBuyerRepayments = useMemo(() => {
+    return buyerRepayments.reduce((sum, r) => sum + r.amount, 0);
+  }, [buyerRepayments]);
+
+  // Outstanding Debt for the selected buyer across all their transactions
+  const selectedBuyerDebt = useMemo(() => {
+    if (!selectedBuyer) return 0;
+    return calculateBuyerTotalDebt(transactions, cashEntries, selectedBuyer.id, selectedBuyer.name);
+  }, [transactions, cashEntries, selectedBuyer]);
+
   // Unpaid purchases/transactions for selected buyer
   const selectedBuyerUnpaidTransactions = useMemo(() => {
     if (!selectedBuyer) return [];
@@ -1663,25 +1682,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     setSettlementModalPrintMode('service');
     setIsSettlementModalOpen(true);
   };
-
-  // Repayment & payment receipts history for the selected buyer
-  const buyerRepayments = useMemo(() => {
-    if (!selectedBuyer) return [];
-    return (cashEntries || []).filter((e) => {
-      if (e.type !== 'buyer_debt_repayment') return false;
-      return isExactContactMatch(e.contactId, e.contactName, selectedBuyer.id, selectedBuyer.name);
-    });
-  }, [cashEntries, selectedBuyer]);
-
-  const totalBuyerRepayments = useMemo(() => {
-    return buyerRepayments.reduce((sum, r) => sum + r.amount, 0);
-  }, [buyerRepayments]);
-
-  // Outstanding Debt for the selected buyer across all their transactions
-  const selectedBuyerDebt = useMemo(() => {
-    if (!selectedBuyer) return 0;
-    return calculateBuyerTotalDebt(transactions, cashEntries, selectedBuyer.id, selectedBuyer.name);
-  }, [transactions, cashEntries, selectedBuyer]);
 
   // Advance wallet balance & statistics for selected buyer
   const selectedBuyerAdvanceStats = useMemo(() => {
